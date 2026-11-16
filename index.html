@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="locked">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,6 +8,17 @@
 <meta name="robots" content="noindex, nofollow">
 <title>대구중부 12지역국 업무 대시보드</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%BC%3C/text%3E%3C/svg%3E">
+<script>
+/* 이 기기에서 이미 잠금을 풀었다면, 화면이 그려지기 전에 잠금 표시를 먼저 지웁니다.
+   (잠금 화면이 깜빡였다 사라지는 것을 막기 위한 한 줄) */
+(function(){
+  try {
+    if (localStorage.getItem('woongjinDashboard.lock.v1') === '1') {
+      document.documentElement.className = document.documentElement.className.replace(/\blocked\b/g, '');
+    }
+  } catch (e) {}
+})();
+</script>
 <style>
 :root{
   --cream:#FFFBF2; --card:#FFFFFF; --ink:#4A3B33; --ink2:#6F5F53; --muted:#A2937F;
@@ -561,9 +572,86 @@ main.pager.dragging .page,main.pager.dragging .page *{user-select:none;-webkit-u
 @keyframes wob{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg) scale(1.06)}}
 .confetti{position:absolute;top:-24px;animation:fall 2.1s linear forwards;font-size:18px}
 @keyframes fall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(320deg);opacity:.9}}
+/* ---------- 잠금 화면 (업무 비밀번호 4자리) ---------- */
+html.locked .topbar,html.locked .pind,html.locked #pager,html.locked .tabbar{visibility:hidden}
+.lock-screen{display:none}
+html.locked .lock-screen{
+  display:flex; position:fixed; inset:0; z-index:300;
+  align-items:center; justify-content:center;
+  padding:calc(22px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
+  background:var(--cream);
+  background-image:radial-gradient(900px 420px at 6% -4%, #FFF4DD 0%, rgba(255,244,221,0) 62%),
+                   radial-gradient(700px 380px at 104% 4%, #EAF4F7 0%, rgba(234,244,247,0) 60%),
+                   radial-gradient(700px 420px at 50% 108%, #EFF7F1 0%, rgba(239,247,241,0) 62%);
+  overflow-y:auto; overscroll-behavior:contain;
+}
+.lock-card{width:100%; max-width:320px; margin:auto; text-align:center}
+.lock-card.shake{animation:lockShake .36s cubic-bezier(.36,.07,.19,.97)}
+@keyframes lockShake{
+  10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(3px)}
+  30%,50%,70%{transform:translateX(-6px)} 40%,60%{transform:translateX(6px)}
+}
+.lock-logo{font-size:46px; line-height:1.1; filter:drop-shadow(0 4px 8px rgba(150,132,105,.22))}
+.lock-card h2{font-size:19px; margin-top:10px; letter-spacing:-.03em}
+.lock-sub{font-size:13px; color:var(--muted); margin-top:4px; font-weight:700}
+.pin-input{
+  width:100%; height:62px; margin-top:18px; padding:0 0 0 12px;
+  text-align:center; font-size:30px; font-weight:800; line-height:1; letter-spacing:12px;
+  color:var(--ink); background:#fff; border:2px solid var(--line); border-radius:18px;
+  box-shadow:var(--shadow-s); outline:none;
+}
+.pin-input::placeholder{color:#E2D5C4; font-size:22px; letter-spacing:12px}
+.pin-input:focus{border-color:var(--accent); box-shadow:0 0 0 4px rgba(91,147,168,.16)}
+.pin-msg{min-height:19px; font-size:12.5px; font-weight:700; color:#C4695E; margin-top:9px}
+.pin-msg.ok{color:var(--green-deep)}
+.pin-pad{display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:4px}
+.pin-pad button{
+  height:56px; border-radius:18px; background:#fff; box-shadow:var(--shadow-s);
+  font-size:22px; font-weight:800; color:var(--ink);
+  display:grid; place-items:center; transition:transform .1s, background .15s;
+}
+.pin-pad button:active{transform:scale(.95); background:#F3FAFC}
+.pin-pad .pad-del{font-size:19px; color:var(--ink2)}
+.pin-pad .pad-ok{background:var(--accent-deep); color:#fff; font-size:15px}
+.pin-pad .pad-ok:active{background:#2F6275}
+.lock-tip{font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.5}
+@media (max-height:620px){
+  .lock-logo{font-size:34px} .lock-card h2{font-size:17px; margin-top:6px}
+  .pin-input{height:54px; font-size:26px; margin-top:12px}
+  .pin-pad button{height:46px; border-radius:15px; font-size:19px}
+  .lock-tip{display:none}
+}
 </style>
 </head>
 <body>
+
+<!-- 잠금 화면: 비밀번호를 풀기 전까지 대시보드 내용을 완전히 가립니다 -->
+<div class="lock-screen" id="lockScreen" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="lock-card" id="lockCard">
+    <div class="lock-logo" aria-hidden="true">💼</div>
+    <h2 id="lockTitle">대구중부 12지역국 업무 대시보드</h2>
+    <p class="lock-sub">업무 비밀번호 4자리를 입력해 주세요</p>
+    <input id="lockPin" class="pin-input" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
+           autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+           aria-label="업무 비밀번호 4자리" aria-describedby="pinMsg">
+    <p class="pin-msg" id="pinMsg" role="alert" aria-live="polite"></p>
+    <div class="pin-pad" id="pinPad" role="group" aria-label="숫자 키패드">
+      <button type="button" data-pin="1">1</button>
+      <button type="button" data-pin="2">2</button>
+      <button type="button" data-pin="3">3</button>
+      <button type="button" data-pin="4">4</button>
+      <button type="button" data-pin="5">5</button>
+      <button type="button" data-pin="6">6</button>
+      <button type="button" data-pin="7">7</button>
+      <button type="button" data-pin="8">8</button>
+      <button type="button" data-pin="9">9</button>
+      <button type="button" data-pin="del" class="pad-del" aria-label="한 자리 지우기">⌫</button>
+      <button type="button" data-pin="0">0</button>
+      <button type="button" data-pin="ok" class="pad-ok" aria-label="확인">확인</button>
+    </div>
+    <p class="lock-tip">한 번 풀면 이 기기에서는 다시 묻지 않아요.</p>
+  </div>
+</div>
 
 <header class="topbar">
   <div class="brand">
@@ -573,6 +661,7 @@ main.pager.dragging .page,main.pager.dragging .page *{user-select:none;-webkit-u
       <p id="todayLine">오늘 업무 브리핑</p>
     </div>
   </div>
+  <button class="icon-btn" data-act="lock" aria-label="화면 잠그기" title="화면 잠그기">🔒</button>
   <button class="icon-btn" data-act="openSettings" aria-label="설정">⚙️</button>
 </header>
 
@@ -3151,6 +3240,10 @@ document.addEventListener('click', function(e){
       break;
     }
 
+    case 'lock':
+      lockNow();
+      break;
+
     case 'openSettings':
       openSettings();
       break;
@@ -3221,6 +3314,7 @@ document.addEventListener('input', function(e){
 });
 
 document.addEventListener('keydown', function(e){
+  if (lockedNow()) return;   /* 잠금 화면에서는 대시보드 단축키를 쓰지 않음 */
   if (e.key === 'Escape') closeModal();
   if (e.key === 'Enter' && e.target && e.target.id === 'taskInput') {
     var btn = document.querySelector('[data-act="taskAdd"]');
@@ -3235,9 +3329,242 @@ document.addEventListener('keydown', function(e){
   else if (e.key === 'End') { goToTab('visit'); renderAll(); }
 });
 
+/* ---------- 13b. 비밀번호 잠금 ----------
+   공개 주소에 올라가는 파일이라 비밀번호(4자리)는 소스에 그대로 적지 않고
+   SHA-256 해시하고만 비교합니다. 한 번 풀면 이 기기의 localStorage 에
+   표시를 남겨 다음에 열 때는 바로 대시보드가 나옵니다. */
+var LOCK_KEY = 'woongjinDashboard.lock.v1';
+/* 업무 비밀번호 4자리의 SHA-256 해시 (평문은 파일에 두지 않습니다) */
+var PIN_HASH = '7a98c22ae38c33c9c2e582c4e09a8d4b2b7f109bcfc099cccf49d4519e774e16';
+var PIN_LEN = 4;
+var lockBusy = false;
+
+/* 문자열 → UTF-8 바이트 */
+function utf8Bytes(str){
+  str = String(str == null ? '' : str);
+  if (window.TextEncoder) { try { return new TextEncoder().encode(str); } catch (e) {} }
+  var out = [];
+  for (var i = 0; i < str.length; i++){
+    var c1 = str.charCodeAt(i);
+    if (c1 < 0x80) out.push(c1);
+    else if (c1 < 0x800) out.push(0xC0 | (c1 >> 6), 0x80 | (c1 & 63));
+    else if (c1 >= 0xD800 && c1 <= 0xDBFF && i + 1 < str.length){
+      var c2 = str.charCodeAt(i + 1);
+      var cp = 0x10000 + ((c1 - 0xD800) << 10) + (c2 - 0xDC00);
+      out.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      i++;
+    } else out.push(0xE0 | (c1 >> 12), 0x80 | ((c1 >> 6) & 63), 0x80 | (c1 & 63));
+  }
+  return new Uint8Array(out);
+}
+function hexOf(bytes){
+  var s = '';
+  for (var i = 0; i < bytes.length; i++) s += (bytes[i] < 16 ? '0' : '') + bytes[i].toString(16);
+  return s;
+}
+
+/* 비보안 컨텍스트(file:// 등)에서도 같은 해시를 얻기 위한 SHA-256 폴백.
+   crypto.subtle 이 없을 때만 쓰입니다. */
+function sha256FallbackHex(str){
+  function rotr(x, n){ return (x >>> n) | (x << (32 - n)); }
+  var K = [
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+  ];
+  var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  var bytes = utf8Bytes(str), len = bytes.length;
+  var total = Math.ceil((len + 9) / 64) * 64;
+  var msg = new Uint8Array(total);
+  msg.set(bytes);
+  msg[len] = 0x80;
+  var bitsHi = Math.floor(len * 8 / 4294967296), bitsLo = (len * 8) >>> 0;
+  msg[total - 8] = (bitsHi >>> 24) & 255; msg[total - 7] = (bitsHi >>> 16) & 255;
+  msg[total - 6] = (bitsHi >>> 8) & 255;  msg[total - 5] = bitsHi & 255;
+  msg[total - 4] = (bitsLo >>> 24) & 255; msg[total - 3] = (bitsLo >>> 16) & 255;
+  msg[total - 2] = (bitsLo >>> 8) & 255;  msg[total - 1] = bitsLo & 255;
+
+  var w = new Array(64);
+  for (var off = 0; off < total; off += 64){
+    for (var t = 0; t < 16; t++){
+      w[t] = (msg[off + t * 4] << 24) | (msg[off + t * 4 + 1] << 16) | (msg[off + t * 4 + 2] << 8) | msg[off + t * 4 + 3];
+    }
+    for (t = 16; t < 64; t++){
+      var s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
+      var s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
+      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
+    }
+    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (t = 0; t < 64; t++){
+      var S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (h + S1 + ch + K[t] + w[t]) | 0;
+      var S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      var maj = (a & b) ^ (a & c) ^ (b & c);
+      var t2 = (S0 + maj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0;
+      d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  var out = new Uint8Array(32);
+  for (var i2 = 0; i2 < 8; i2++){
+    out[i2 * 4] = (H[i2] >>> 24) & 255; out[i2 * 4 + 1] = (H[i2] >>> 16) & 255;
+    out[i2 * 4 + 2] = (H[i2] >>> 8) & 255; out[i2 * 4 + 3] = H[i2] & 255;
+  }
+  return hexOf(out);
+}
+
+/* SHA-256 16진 문자열 (Promise) — https 에서는 crypto.subtle, 아니면 폴백 */
+function sha256Hex(str){
+  var c = window.crypto;
+  if (c && c.subtle && typeof c.subtle.digest === 'function' && window.isSecureContext !== false){
+    try {
+      return c.subtle.digest('SHA-256', utf8Bytes(str)).then(function(buf){
+        return hexOf(new Uint8Array(buf));
+      }, function(){ return sha256FallbackHex(str); });
+    } catch (e) { /* 아래 폴백으로 */ }
+  }
+  return Promise.resolve().then(function(){ return sha256FallbackHex(str); });
+}
+
+function lockedNow(){ return document.documentElement.classList.contains('locked'); }
+/* 잠금 중에는 화면 낭독기·키보드에서도 대시보드 내용이 잡히지 않도록 */
+function applyLockInert(){
+  var on = lockedNow();
+  var nodes = document.querySelectorAll('.topbar, .pind, #pager, .tabbar');
+  for (var i = 0; i < nodes.length; i++){
+    try { nodes[i].inert = on; } catch (e) {}
+  }
+}
+function setPinMsg(text, ok){
+  var m = el('pinMsg');
+  if (!m) return;
+  m.textContent = text || '';
+  m.className = 'pin-msg' + (ok ? ' ok' : '');
+}
+function shakeLock(){
+  var card = el('lockCard');
+  if (!card) return;
+  card.classList.remove('shake');
+  void card.offsetWidth;
+  card.classList.add('shake');
+  setTimeout(function(){ card.classList.remove('shake'); }, 420);
+}
+function clearPin(){
+  var inp = el('lockPin');
+  if (inp) inp.value = '';
+}
+
+function lockNow(){
+  if (typeof closeModal === 'function') closeModal();
+  document.documentElement.classList.add('locked');
+  try { localStorage.removeItem(LOCK_KEY); } catch (e) {}
+  lockBusy = false;
+  clearPin();
+  setPinMsg('');
+  applyLockInert();
+  var sc = el('lockScreen');
+  if (sc) sc.scrollTop = 0;
+}
+
+function unlockNow(){
+  document.documentElement.classList.remove('locked');
+  applyLockInert();
+  try { localStorage.setItem(LOCK_KEY, '1'); } catch (e) {}
+  lockBusy = false;
+  clearPin();
+  setPinMsg('');
+  if (typeof toast === 'function') toast('잠금을 풀었어요 🔓');
+}
+
+/* 키패드·키보드에서 들어온 한 자리 */
+function pinPress(key){
+  if (!lockedNow()) return;
+  var inp = el('lockPin');
+  if (!inp) return;
+  if (key === 'del'){
+    inp.value = inp.value.slice(0, -1);
+    setPinMsg('');
+    return;
+  }
+  if (key === 'ok'){ submitPin(); return; }
+  if (!/^[0-9]$/.test(String(key))) return;
+  if (inp.value.length >= PIN_LEN) return;
+  if (inp.value) setPinMsg('');
+  inp.value += key;
+  if (inp.value.length === PIN_LEN) setTimeout(submitPin, 150);
+}
+
+function submitPin(){
+  if (lockBusy || !lockedNow()) return;
+  var inp = el('lockPin');
+  var val = (inp ? inp.value : '').replace(/[^0-9]/g, '');
+  if (inp && val !== inp.value) inp.value = val;
+  if (val.length < PIN_LEN){ setPinMsg('비밀번호 '+PIN_LEN+'자리를 모두 입력해 주세요'); return; }
+  lockBusy = true;
+  setPinMsg('확인 중…', true);
+  sha256Hex(val).then(function(hex){
+    if (hex === PIN_HASH){
+      unlockNow();
+      return;
+    }
+    lockBusy = false;
+    clearPin();
+    setPinMsg('비밀번호가 맞지 않아요. 다시 입력해 주세요.');
+    shakeLock();
+  }, function(){
+    lockBusy = false;
+    setPinMsg('확인하지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+  });
+}
+
+function initLock(){
+  var pad = el('pinPad'), inp = el('lockPin');
+  if (pad){
+    pad.addEventListener('click', function(e){
+      var b = e.target && e.target.closest ? e.target.closest('[data-pin]') : null;
+      if (!b) return;
+      e.preventDefault();
+      pinPress(b.getAttribute('data-pin'));
+    });
+  }
+  if (inp){
+    inp.addEventListener('input', function(){
+      var clean = inp.value.replace(/[^0-9]/g, '').slice(0, PIN_LEN);
+      if (clean !== inp.value) inp.value = clean;
+      if (clean) setPinMsg('');
+      if (clean.length === PIN_LEN) setTimeout(submitPin, 150);
+    });
+    inp.addEventListener('keydown', function(e){
+      if (e.key === 'Enter'){ e.preventDefault(); submitPin(); }
+    });
+  }
+  /* 키패드를 누르지 않고 그냥 숫자를 쳐도 입력되게 */
+  document.addEventListener('keydown', function(e){
+    if (!lockedNow()) return;
+    if (e.key === 'Enter'){ e.preventDefault(); submitPin(); return; }
+    if (e.key === 'Backspace'){ e.preventDefault(); pinPress('del'); return; }
+    if (/^[0-9]$/.test(e.key)){
+      e.preventDefault();
+      pinPress(e.key);
+    }
+  });
+  /* 잠긴 채로 열렸다면 입력 준비 (모바일 키보드가 가리지 않도록 자동 포커스는 하지 않음) */
+  setPinMsg('');
+  applyLockInert();
+}
+
 /* ---------- 14. 시작 ---------- */
 function boot(){
   state.ui.tab = 'home';
+  initLock();
   initPager();
   renderAll();
   goToTab('home', { instant:true });
