@@ -3069,10 +3069,10 @@ document.addEventListener('click', function(e){
       if (stD > 0 && !wasAllStar && allStarOf(stOwner).on) {
         celebrate('🌟', ownerById(stOwner).short+' All Star 달성!', '모든 실적 항목이 목표 이상이에요');
         chime(); stCelebrated = true;
-      } else if (stD > 0 && !wasDone && statReached(stItem)) {
+      } else if (stD > 0 && !wasDone && statIsRatio(stItem) && statReached(stItem)) {
         celebrate('🏅', stItem.label+' '+RATIO_GOAL+'% 달성!', ratioPctText(ratioPct(stItem))+' · '+ownerById(stOwner).short+' 실적');
         chime(); stCelebrated = true;
-      } else if (!statIsRatio(stItem) && stD > 0 && !wasDone && stV === statGoal(stItem)) {
+      } else if (!statIsRatio(stItem) && stD > 0 && !wasDone && stV >= statGoal(stItem)) {
         celebrate('🏅', stItem.label+' 목표 달성!', ownerById(stOwner).short+' 실적');
         chime(); stCelebrated = true;
       }
