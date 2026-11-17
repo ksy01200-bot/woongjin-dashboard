@@ -326,6 +326,21 @@ main.pager.dragging .page,main.pager.dragging .page *{user-select:none;-webkit-u
 .st-foot{margin-top:10px;font-size:12.5px;color:var(--muted)}
 .st-foot b{color:var(--accent-deep)}
 
+/* 구좌·진단 — 상위 담당자 실적 자동 반영 표시 */
+.st-lb{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0}
+.st-top .st-pct{flex:0 0 auto;white-space:nowrap}
+.st-link{
+  flex:0 0 auto;font-size:10px;font-weight:800;line-height:1.5;letter-spacing:-.01em;
+  color:#8A6A2F;background:#FFF3D2;border-radius:999px;padding:1px 7px;white-space:nowrap;
+}
+.st-link-hint{
+  margin-top:9px;padding:8px 10px;border-radius:12px;
+  font-size:11.5px;font-weight:800;line-height:1.55;color:#94702A;
+  background:#FFFAEE;box-shadow:inset 0 0 0 1.2px #F2E4C4;
+}
+.st-link-hint b{color:#7A5511}
+@media (max-width:360px){.st-link{font-size:9.5px;padding:1px 6px}.st-link-hint{font-size:11px}}
+
 /* All Star 실적 */
 .who-tabs.st-fit{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;overflow:visible;padding-bottom:0}
 .who-tabs.st-fit .who{padding:5px;gap:4px;min-width:0}
@@ -1315,6 +1330,138 @@ function allStarOf(ownerId){
   return { total:items.length, done:done, left:items.length - done, on:(items.length > 0 && done === items.length) };
 }
 
+/* ---------- 5b. 구좌·진단 — 위 담당자 실적에 변동분(Δ)만 더하기 ----------
+   구좌: 김소연 → 권명주(팀 구좌) → 이미화(월 구좌)
+   진단: 김소연 → 권명주(팀 진단)
+   이미 저장돼 있던 숫자는 다시 계산하지 않는다. 앞으로 ＋/− 나 직접 입력으로
+   바뀔 때의 변동분(Δ)만 위 담당자 실적에 같은 만큼 더한다(소수 둘째 자리, 0 이상). */
+var STAT_CHAIN = [
+  { key:'gujwa', label:'구좌', slots:[
+    { owner:'soyeon', id:'st_so_gujwa',   label:'구좌' },
+    { owner:'kwon',   id:'st_kwon_gujwa', label:'팀 구좌' },
+    { owner:'ima',    id:'st_ima_gujwa',  label:'월 구좌' }
+  ] },
+  { key:'diag', label:'팀 진단', slots:[
+    { owner:'soyeon', id:'st_diag',      label:'진단' },
+    { owner:'kwon',   id:'st_kwon_diag', label:'팀 진단' }
+  ] }
+];
+/* 변동분은 음수도 되므로 roundQty(0 미만 → 0) 대신 부호를 살린 반올림을 쓴다 */
+function roundDelta(v){
+  var n = Number(v);
+  if (!isFinite(n)) return 0;
+  return Math.round(n * 100) / 100;
+}
+/* 항목은 id 로 찾고, 지웠다 새로 만든 경우에만 같은 담당자 안에서 이름으로 찾는다 */
+function resolveStatSlot(ownerId, slot){
+  var items = statsOf(ownerId);
+  for (var i=0;i<items.length;i++){ if (items[i].id === slot.id) return items[i]; }
+  var exact = null, partial = null, n = 0;
+  for (i=0;i<items.length;i++){
+    var lb = String(items[i].label || '').replace(/\s+/g,' ').trim();
+    if (lb === slot.label){ exact = items[i]; break; }
+    if (lb.indexOf(slot.label) >= 0){ partial = items[i]; n++; }
+  }
+  if (exact) return exact;
+  return n === 1 ? partial : null;
+}
+/* 이 항목이 어느 연동 줄의 몇 번째 칸인지 */
+function statChainHit(ownerId, itemId){
+  var i, j, ch, sl;
+  for (i=0;i<STAT_CHAIN.length;i++){
+    ch = STAT_CHAIN[i];
+    for (j=0;j<ch.slots.length;j++){
+      sl = ch.slots[j];
+      if (sl.owner === ownerId && sl.id === itemId) return { chain:ch, idx:j };
+    }
+  }
+  for (i=0;i<STAT_CHAIN.length;i++){
+    ch = STAT_CHAIN[i];
+    for (j=0;j<ch.slots.length;j++){
+      sl = ch.slots[j];
+      if (sl.owner !== ownerId) continue;
+      var it = resolveStatSlot(ownerId, sl);
+      if (it && it.id === itemId) return { chain:ch, idx:j };
+    }
+  }
+  return null;
+}
+/* 이 항목보다 위에 있는 담당자 칸들 */
+function statChainAbove(ownerId, itemId){
+  var hit = statChainHit(ownerId, itemId);
+  if (!hit) return null;
+  var above = hit.chain.slots.slice(hit.idx + 1);
+  if (!above.length) return null;
+  return { chain:hit.chain, idx:hit.idx, above:above };
+}
+/* 위 담당자 실적에 Δ 를 더한다 — 실제로 바뀐 칸만 돌려준다 */
+function addStatDelta(ownerId, itemId, delta){
+  if (!delta) return null;
+  var lk = statChainAbove(ownerId, itemId);
+  if (!lk) return null;
+  var applied = [];
+  lk.above.forEach(function(slot){
+    var it = resolveStatSlot(slot.owner, slot);
+    if (!it) return;
+    var before = statCur(it);
+    var starBefore = allStarOf(slot.owner).on;
+    var next = statIsRatio(it) ? clampPeople(before + delta) : roundQty(before + delta);
+    if (next === before) return;
+    it.cur = next;
+    applied.push({
+      owner: slot.owner, short: ownerById(slot.owner).short, label: it.label,
+      before: before, after: next, delta: roundDelta(next - before),
+      starBefore: starBefore, starNow: allStarOf(slot.owner).on
+    });
+  });
+  if (!applied.length) return null;
+  var src = null, items = statsOf(ownerId);
+  for (var i=0;i<items.length;i++){ if (items[i].id === itemId) src = items[i]; }
+  return {
+    chain: lk.chain, delta: roundDelta(delta),
+    fromOwner: ownerId, fromShort: ownerById(ownerId).short,
+    fromLabel: (src ? src.label : lk.chain.label), applied: applied
+  };
+}
+/* 실적 현재값을 바꾸는 유일한 통로 — 바뀐 변동분을 위 담당자에도 함께 더한다 */
+function setStatCur(ownerId, itemId, value){
+  var items = statsOf(ownerId), it = null;
+  for (var i=0;i<items.length;i++){ if (items[i].id === itemId) it = items[i]; }
+  if (!it) return null;
+  var before = statCur(it);
+  var next = statIsRatio(it) ? clampPeople(value) : roundQty(value);
+  if (next === before) return { item:it, before:before, after:before, delta:0, link:null };
+  it.cur = next;
+  var delta = roundDelta(next - before);
+  return { item:it, before:before, after:next, delta:delta, link:addStatDelta(ownerId, itemId, delta) };
+}
+/* 연동해서 함께 바뀌었을 때 짧게 알려 준다 */
+function statLinkNotice(res){
+  if (!res || !res.link) return false;
+  var lk = res.link;
+  var names = lk.applied.map(function(a){ return a.short; }).join('·');
+  toast('🔗 ' + lk.fromShort + ' ' + lk.fromLabel + ' '
+    + (lk.delta > 0 ? '+' : '−') + fmtNum(Math.abs(lk.delta))
+    + ' → ' + names + ' ' + lk.chain.label + '에도 함께 반영했어요');
+  return true;
+}
+/* 실적 행 이름 옆의 작은 연동 배지 */
+function statLinkBadge(ownerId, itemId){
+  var lk = statChainAbove(ownerId, itemId);
+  if (!lk) return '';
+  var names = lk.above.map(function(s){ return ownerById(s.owner).short; }).join('·');
+  return '<span class="st-link" title="'+esc('여기서 바뀐 만큼 '+names+' '+lk.chain.label+'에도 함께 더해져요')+'">'
+    + '🔗 '+esc(names)+' '+esc(lk.chain.label)+'</span>';
+}
+/* 카드 아래 작은 안내 문구 */
+function statLinkHintHtml(ownerId){
+  var msg = '';
+  if (ownerId === 'soyeon') msg = '🔗 <b>구좌</b>는 권명주·이미화 구좌에, <b>진단</b>은 권명주 팀진단에 바뀐 만큼 자동으로 더해져요';
+  else if (ownerId === 'kwon') msg = '🔗 <b>팀 구좌</b>는 이미화 구좌에 바뀐 만큼 함께 더해져요 · <b>팀 진단</b>은 이 카드에만 쌓여요';
+  else if (ownerId === 'ima') msg = '🔗 구좌는 김소연→권명주에서 올라온 변동분이 자동으로 더해져요 · 여기서 직접 고치면 이 카드만 바뀌어요';
+  return msg ? '<p class="st-link-hint">'+msg+'</p>' : '';
+}
+
 /* ---------- 6. 화면 조각 ---------- */
 function schedRow(s, opts){
   opts = opts || {};
@@ -1405,7 +1552,7 @@ function statItemRow(ownerId, it){
   return '<div class="st-row'+(done?' done':'')+'">'
     + '<span class="st-ic">'+esc(it.emoji || '📌')+'</span>'
     + '<div class="st-b">'
-    +   '<div class="st-top"><b>'+esc(it.label)+'</b>'
+    +   '<div class="st-top"><span class="st-lb"><b>'+esc(it.label)+'</b>'+statLinkBadge(ownerId, it.id)+'</span>'
     +     '<span class="st-pct'+(done?' on':'')+'">'+(done?starIcon():'')+pct+'%</span></div>'
     +   '<div class="st-mid">'
     +     '<span class="st-num">'
@@ -1454,7 +1601,7 @@ function statRatioRow(ownerId, it){
   return '<div class="st-row ratio'+(v.done?' done':'')+'">'
     + '<span class="st-ic">'+esc(it.emoji || '📖')+'</span>'
     + '<div class="st-b">'
-    +   '<div class="st-top"><b>'+esc(it.label)+'</b>'+badge+'</div>'
+    +   '<div class="st-top"><span class="st-lb"><b>'+esc(it.label)+'</b>'+statLinkBadge(ownerId, it.id)+'</span>'+badge+'</div>'
     +   '<div class="rt-line"><span class="rt-lbl">완료</span>'
     +     '<button class="step" data-act="statDelta" data-owner="'+ownerId+'" data-id="'+it.id+'" data-d="-1" aria-label="'+esc(it.label)+' 완료 인원 줄이기">−</button>'
     +     '<input class="rt-num" type="number" inputmode="numeric" min="0" max="999" step="1" value="'+v.cur+'" data-act="statRatioCur" data-owner="'+ownerId+'" data-id="'+it.id+'" aria-label="'+esc(it.label)+' 완료 인원">'
@@ -1592,7 +1739,8 @@ function statFootHtml(who){
       : '')
     + '<p class="st-foot">'+(mine.left > 0
         ? '<b>'+mine.done+' / '+mine.total+'</b> 항목 달성 · − ＋ 로 계속 세고, 숫자를 누르면 직접 고칠 수 있어요'
-        : '이 달 실적 항목을 모두 채웠어요 🎉')+'</p>';
+        : '이 달 실적 항목을 모두 채웠어요 🎉')+'</p>'
+    + statLinkHintHtml(who);
 }
 
 /* 인원 입력칸에서 빠져나올 때: 실적 행(입력칸·− ＋)은 그대로 두고
@@ -2911,20 +3059,27 @@ document.addEventListener('click', function(e){
       var stD = Number(t.getAttribute('data-d')) || 0;
       var wasAllStar = allStarOf(stOwner).on;
       var wasDone = statReached(stItem);
-      /* 소수 실적도 부동소수점 오차 없이 한 칸씩 (0.5 +1 = 1.5, 0.5 −1 = 0) */
-      var stV = statIsRatio(stItem) ? clampPeople(statCur(stItem) + stD) : roundQty(statCur(stItem) + stD);
-      stItem.cur = stV;
+      /* 소수 실적도 부동소수점 오차 없이 한 칸씩 (0.5 +1 = 1.5, 0.5 −1 = 0)
+         바뀐 변동분은 구좌·진단 연동 규칙대로 위 담당자 실적에도 함께 더해진다 */
+      var stRes = setStatCur(stOwner, stId, statCur(stItem) + stD);
+      var stV = stRes ? stRes.after : statCur(stItem);
       save(); renderAll();
       if (stD > 0) floatUp(e.clientX, e.clientY, '+'+fmtNum(stD));
+      var stCelebrated = false;
       if (stD > 0 && !wasAllStar && allStarOf(stOwner).on) {
         celebrate('🌟', ownerById(stOwner).short+' All Star 달성!', '모든 실적 항목이 목표 이상이에요');
-        chime();
+        chime(); stCelebrated = true;
       } else if (stD > 0 && !wasDone && statReached(stItem)) {
         celebrate('🏅', stItem.label+' '+RATIO_GOAL+'% 달성!', ratioPctText(ratioPct(stItem))+' · '+ownerById(stOwner).short+' 실적');
-        chime();
+        chime(); stCelebrated = true;
       } else if (!statIsRatio(stItem) && stD > 0 && !wasDone && stV === statGoal(stItem)) {
         celebrate('🏅', stItem.label+' 목표 달성!', ownerById(stOwner).short+' 실적');
-        chime();
+        chime(); stCelebrated = true;
+      }
+      statLinkNotice(stRes);
+      if (!stCelebrated && stRes && stRes.link) {
+        var stUpStar = stRes.link.applied.filter(function(a){ return a.starNow && !a.starBefore; })[0];
+        if (stUpStar) { celebrate('🌟', stUpStar.short+' All Star 달성!', '연동된 실적까지 목표를 모두 채웠어요'); chime(); }
       }
       break;
     }
@@ -2999,19 +3154,27 @@ document.addEventListener('click', function(e){
       var statWasEdit = !!modalCtx.id;
       var wasAllStar2 = allStarOf(modalCtx.owner).on;
       var statOwnerId = modalCtx.owner;
+      var saveLink = null, saveDelta = 0;
       if (modalCtx.id) {
         var target = arr.filter(function(x){ return x.id === modalCtx.id; })[0];
         if (target) {
+          var prevCur = statCur(target);
           delete target.type;
           delete target.total;
           for (var sk in statPayload) target[sk] = statPayload[sk];
+          target.cur = statIsRatio(target) ? clampPeople(statPayload.cur) : roundQty(statPayload.cur);
+          /* 직접 숫자로 고쳤을 때도 바뀐 만큼(Δ)만 위 담당자에게 더한다 */
+          saveDelta = roundDelta(target.cur - prevCur);
+          if (saveDelta) saveLink = addStatDelta(modalCtx.owner, target.id, saveDelta);
         }
       } else {
         statPayload.id = uid('st');
         arr.push(statPayload);
       }
       save(); closeModal(); renderAll();
-      toast(statWasEdit ? '실적 항목을 고쳤어요' : '실적 항목을 추가했어요');
+      if (!statLinkNotice({ delta: saveDelta, link: saveLink })) {
+        toast(statWasEdit ? '실적 항목을 고쳤어요' : '실적 항목을 추가했어요');
+      }
       if (!wasAllStar2 && allStarOf(statOwnerId).on) {
         celebrate('🌟', ownerById(statOwnerId).short+' All Star 달성!', '모든 실적 항목이 목표 이상이에요');
         chime();
@@ -3307,8 +3470,18 @@ document.addEventListener('input', function(e){
   var iOwner = t.getAttribute('data-owner'), iId = t.getAttribute('data-id');
   var iItem = statsOf(iOwner).filter(function(x){ return x.id === iId; })[0];
   if (!iItem || !statIsRatio(iItem)) return;
-  if (act === 'statRatioCur') iItem.cur = clampPeople(t.value);
-  else iItem.total = clampPeople(t.value);
+  if (act === 'statRatioCur') {
+    var iPrev = statCur(iItem);
+    iItem.cur = clampPeople(t.value);
+    /* 연동 항목이면 타이핑 중에도 바뀐 만큼 위 담당자 실적에 바로 더한다 */
+    var iDelta = roundDelta(statCur(iItem) - iPrev);
+    if (iDelta) {
+      addStatDelta(iOwner, iId, iDelta);
+      refreshStatsChrome(iOwner);   /* 탭의 달성 수·All Star 표시도 같이 */
+    }
+  } else {
+    iItem.total = clampPeople(t.value);
+  }
   save();
   refreshRatioRow(iItem);   /* 타이핑 중에도 %·진행 바·안내가 바로 따라온다 */
 });
