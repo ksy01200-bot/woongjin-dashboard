@@ -735,7 +735,7 @@ html.locked .lock-screen{
 /* ---------- 1. 상수 ---------- */
 var STORAGE_KEY = 'woongjin12Dashboard.v1';
 var WEATHER_KEY = 'woongjin12Dashboard.weather.v1';
-var SEED_VERSION = 2;
+var SEED_VERSION = 3;
 var REGION_NAME = '대구중부 12지역국';
 var MY_DEADLINE = '2026-11-24';
 var MY_ID = 'soyeon';
@@ -843,7 +843,7 @@ var SEED_SCHEDULES = [
   { id:'sc_1118_edu', short:'에듀맘', kind:'date', date:'2026-11-18', title:'본부 에듀맘 DAY (구미동부)', owner:'common' },
   { id:'sc_1118_isol', short:'이솔', kind:'date', date:'2026-11-18', start:'09:00', title:'이솔 방문', owner:'soyeon' },
   { id:'sc_1118_book', short:'북스토리', kind:'date', date:'2026-11-18', start:'10:00', title:'나만의 북스토리', owner:'soyeon', note:'융합독서:상담용' },
-  { id:'sc_1118_kang', short:'강다혜', kind:'date', date:'2026-11-18', start:'16:30', title:'강다혜 방문', owner:'soyeon', note:'토토리 명작 꼬마 워크북 활동' },
+  { id:'sc_1118_kang', short:'강다혜', kind:'date', date:'2026-11-20', start:'16:30', title:'강다혜 방문', owner:'soyeon', note:'토토리 명작 꼬마 워크북 활동' },
   { id:'sc_1118_lim', short:'임다현', kind:'date', date:'2026-11-18', start:'18:00', title:'임다현 방문', owner:'soyeon', note:'총 6회 중 5회차 · 빅플러스 안내' },
   { id:'sc_1119_edu', short:'교육국장', kind:'date', date:'2026-11-19', start:'10:00', title:'교육국장님 교육', owner:'common', note:'10:30 에듀맘 DAY와 이어짐' },
   { id:'sc_1119_edumom', short:'에듀맘', kind:'date', date:'2026-11-19', start:'10:30', end:'12:00', title:'본부 에듀맘 DAY (대구중부)', owner:'common', note:'같은도서 다른반응 · 대구중부 교육장' },
@@ -902,7 +902,7 @@ var SEED_VISITS = [
     ] },
   { id:'vi_isol', owner:'soyeon', customer:'이솔', date:'2026-11-18', time:'09:00', done:false,
     memo:'방문 상담', checklist:[] },
-  { id:'vi_kang', owner:'soyeon', customer:'강다혜', date:'2026-11-18', time:'16:30', done:false,
+  { id:'vi_kang', owner:'soyeon', customer:'강다혜', date:'2026-11-20', time:'16:30', done:false,
     memo:'토토리 명작 꼬마 워크북 활동',
     checklist:[
       {id:'vic4', title:'토토리 워크북 준비', done:false},
@@ -1056,6 +1056,19 @@ function migrateRatioItems(stats){
     });
   });
 }
+/* 시드 v3: 강다혜 방문 11/18(수) 16:30 → 11/20(금) 16:30 (소연 님 요청).
+   사용자가 넣은 실적·완료 체크는 그대로 두고 날짜만 옮긴다.
+   이미 11/20 이거나 사용자가 다른 날짜로 옮겨 둔 항목은 건드리지 않는다. */
+var KANG_OLD_DATE = '2026-11-18';
+var KANG_NEW_DATE = '2026-11-20';
+function moveKangDate(list){
+  (Array.isArray(list) ? list : []).forEach(function(x){
+    if (!x || x.date !== KANG_OLD_DATE) return;
+    var isKang = (x.id === 'sc_1118_kang' || x.id === 'vi_kang' ||
+                  x.title === '강다혜 방문' || x.customer === '강다혜');
+    if (isKang) x.date = KANG_NEW_DATE;
+  });
+}
 /* 예전 초기값(이미화·권명주 비어 있음 + 소연 항목이 옛 3종)인지 */
 function legacyStatsShape(s){
   if (!s || typeof s !== 'object') return true;
@@ -1157,7 +1170,13 @@ function normalize(src){
   });
 
   out.version = 1;
-  out.seedVersion = src.seedVersion !== undefined ? (Number(src.seedVersion) || 1) : SEED_VERSION;
+  var srcSeed = src.seedVersion !== undefined ? (Number(src.seedVersion) || 1) : 1;
+  /* 시드 v3 마이그레이션: 저장된 기기에서도 강다혜 방문 날짜만 11/20 으로 */
+  if (srcSeed < SEED_VERSION) {
+    moveKangDate(out.schedules);
+    moveKangDate(out.visits);
+  }
+  out.seedVersion = SEED_VERSION;
   return out;
 }
 
@@ -1166,8 +1185,9 @@ function load(){
     var raw = localStorage.getItem(STORAGE_KEY);
     var parsed = raw ? JSON.parse(raw) : null;
     var st = normalize(parsed);
-    /* 실적 세팅을 새 기준으로 바꿨으면 바로 저장해 두어 다시 옮기지 않게 한다 */
-    if (parsed && Number(parsed.statsSetup) !== STATS_SETUP_VERSION) {
+    /* 실적 세팅·시드 버전을 새 기준으로 바꿨으면 바로 저장해 두어 다시 옮기지 않게 한다 */
+    if (parsed && (Number(parsed.statsSetup) !== STATS_SETUP_VERSION ||
+                   Number(parsed.seedVersion) !== SEED_VERSION)) {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch(e){}
     }
     return st;
