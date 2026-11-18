@@ -404,6 +404,37 @@ main.pager.dragging .page,main.pager.dragging .page *{user-select:none;-webkit-u
 .st-sub{margin-top:6px;font-size:11.5px;font-weight:800;color:#B4A492}
 .st-sub.done{color:#B08228}
 
+/* 7구좌 숙박권 — All Star(1구좌) 다음 단계 */
+.st-who{flex-wrap:wrap;row-gap:6px}
+.st-who .w-nm{min-width:112px}
+.st-badges{margin-left:auto;display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.st-badges .tk{margin-left:0}
+.tk.hotel{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;background:linear-gradient(135deg,#DCF4E7,#B7E5CD);color:#2C7A55;box-shadow:0 3px 9px rgba(79,169,122,.22)}
+.who .who-cnt.hotel{background:linear-gradient(135deg,#DCF4E7,#B7E5CD);color:#2C7A55}
+.hotel{border-radius:16px;padding:10px 12px;margin:0 0 6px;background:#F5FAF7;box-shadow:inset 0 0 0 1.5px #DDEBE2}
+.hotel .ht-h{display:flex;align-items:center;gap:7px;min-width:0}
+.hotel .ht-ic{flex:0 0 auto;display:grid;place-items:center;width:20px;font-size:18px;line-height:1}
+.hotel .ht-t{flex:1 1 auto;min-width:0;font-size:13.5px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hotel .ht-num{flex:0 0 auto;white-space:nowrap;font-size:12.5px;font-weight:800;color:#3E7C5E;letter-spacing:-.01em}
+.hotel .ht-d{margin:2px 0 0;font-size:11.5px;color:var(--muted);font-weight:700;line-height:1.4;word-break:keep-all}
+.hotel .ht-track{position:relative;height:12px;margin-top:9px;background:#E7F1EB;border-radius:99px;box-shadow:inset 0 1px 2px rgba(90,130,110,.12);overflow:hidden}
+.hotel .ht-track>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#CDE9DA,#8AC7AA);transition:width .5s cubic-bezier(.3,1,.4,1)}
+.hotel .ht-mark{position:absolute;top:0;bottom:0;width:2px;background:#E8B236;opacity:.9}
+.hotel .ht-foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+.hotel .ht-sub{font-size:11.5px;font-weight:800;color:#9DAFA4}
+.hotel .ht-stages{margin-left:auto;font-size:10.5px;font-weight:800;color:#8CA396;background:#fff;border-radius:999px;padding:2px 8px;white-space:nowrap;box-shadow:inset 0 0 0 1px #E3EEE7}
+.hotel.htl-on{background:linear-gradient(135deg,#EBF9F1 0%,#D5F1E3 55%,#C4EBD8 100%);box-shadow:0 8px 20px rgba(79,169,122,.20),inset 0 0 0 1.5px #8FD0AE}
+.hotel.htl-on .ht-ic{font-size:21px}
+.hotel.htl-on .ht-t{font-size:15.5px;color:#2C7A55}
+.hotel.htl-on .ht-d{color:#4E8A6C}
+.hotel.htl-on .ht-num{color:#27714F}
+.hotel.htl-on .ht-track{background:#DFF1E8;box-shadow:inset 0 0 0 1.5px #9CD8B8}
+.hotel.htl-on .ht-track>i{background:linear-gradient(90deg,#7FD8AF,#3FA97A)}
+.hotel.htl-on .ht-sub{color:#27714F;font-size:12px}
+.hotel.htl-on .ht-stages{color:#2C7A55;background:#F3FCF7;box-shadow:inset 0 0 0 1px #BCE5CE}
+@media (max-width:430px){.hotel{padding:9px 11px}.st-badges{gap:4px}}
+@media (max-width:360px){.hotel .ht-t{font-size:13px}.hotel .ht-num{font-size:11.5px}.hotel .ht-d{font-size:11px}.hotel .ht-stages{display:none}}
+
 /* 독서케어 — 총 케어 인원 대비 비율형 */
 .st-row.ratio .st-ic{background:#FFF1DC;box-shadow:inset 0 0 0 1.5px #F4DDB6}
 .rt-line{display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap}
@@ -940,6 +971,12 @@ var STATS_SETUP_VERSION = 4;
 var QTY_LIMIT = 999;
 var RATIO_GOAL = 90;   /* 비율형 항목(독서케어)의 목표 % */
 var ALLSTAR_DUE_DEFAULT = '2026-11-24';   /* 이번 달 All Star 달성 기한 (매달 바꿀 수 있음) */
+/* All Star(구좌 1) 다음 단계 — 김소연 님 7구좌 숙박권.
+   저장되는 값은 하나도 늘리지 않고, 이미 있는 '구좌'(st_so_gujwa) 수치로만 계산한다
+   (기존에 입력해 둔 실적이 그대로 살아 있게 하기 위해서) */
+var HOTEL_GOAL = 7;
+var HOTEL_OWNER = 'soyeon';
+var HOTEL_STAT_ID = 'st_so_gujwa';
 var STATS_SEED = {
   ima: [
     { id:'st_ima_gujwa',  label:'월 구좌',  emoji:'📚', goal:35, cur:0, unit:'구좌' },
@@ -1350,6 +1387,44 @@ function allStarOf(ownerId){
   return { total:items.length, done:done, left:items.length - done, on:(items.length > 0 && done === items.length) };
 }
 
+/* ---------- 5a. 7구좌 숙박권 — All Star(구좌 1) 다음 단계 ----------
+   김소연 님의 '구좌' 항목만 대상. All Star 목표는 그대로 1구좌로 두고,
+   그 뒤에 이어지는 7구좌 숙박권 단계를 같은 숫자로 함께 체킹한다. */
+function hotelItem(){
+  var items = statsOf(HOTEL_OWNER), i;
+  for (i=0;i<items.length;i++){ if (items[i].id === HOTEL_STAT_ID) return items[i]; }
+  /* 항목을 지웠다 새로 만든 경우: 이름이 '구좌'인 일반 항목 */
+  for (i=0;i<items.length;i++){
+    var lb = String(items[i].label || '').replace(/\s+/g, '');
+    if (lb === '구좌' && !statIsRatio(items[i])) return items[i];
+  }
+  return null;
+}
+function hotelView(){
+  var it = hotelItem();
+  if (!it) return null;
+  var cur = statCur(it);
+  var goal = HOTEL_GOAL;
+  var pct = goal > 0 ? Math.min(100, Math.round(cur / goal * 1000) / 10) : 0;
+  var done = cur >= goal;
+  var left = done ? 0 : roundQty(goal - cur);
+  var over = done ? roundQty(cur - goal) : 0;
+  var sub;
+  if (done) sub = '🏨 숙박권 달성' + (over > 0 ? ' · 목표보다 +' + fmtNum(over) + '구좌 더 셈' : '!');
+  else sub = fmtNum(left) + '구좌 남음';
+  return { cur:cur, goal:goal, pct:pct, done:done, left:left, over:over, sub:sub };
+}
+function hotelReached(){ var v = hotelView(); return !!(v && v.done); }
+/* 7구좌를 처음 넘긴 순간에만 축하 (이미 넘어 있던 상태에서 숫자만 고치면 울리지 않는다) */
+function hotelCelebrateIfNew(wasReached){
+  if (wasReached) return false;
+  var v = hotelView();
+  if (!v || !v.done) return false;
+  celebrate('🏨', '숙박권 달성!', HOTEL_GOAL + '구좌 목표를 넘겼어요');
+  chime();
+  return true;
+}
+
 /* ---------- 5b. 구좌·진단 — 위 담당자 실적에 변동분(Δ)만 더하기 ----------
    구좌: 김소연 → 권명주(팀 구좌) → 이미화(월 구좌)
    진단: 김소연 → 권명주(팀 진단)
@@ -1726,15 +1801,44 @@ function allStarBanner(ownerId){
     + '</div>';
 }
 
+function hotelBanner(ownerId){
+  if (ownerId !== HOTEL_OWNER) return '';
+  var v = hotelView();
+  if (!v) return '';
+  var markPct = Math.round(1 / HOTEL_GOAL * 1000) / 10;   /* All Star 1구좌 기준선 */
+  var desc = v.done
+    ? HOTEL_GOAL + '구좌 달성 · 넘긴 구좌도 그대로 쌓여요'
+    : 'All Star 다음 단계 · 구좌 ' + HOTEL_GOAL + '개를 채우면 숙박권 달성';
+  return '<div class="hotel htl-'+(v.done?'on':'off')+'" id="hotelStage">'
+    + '<div class="ht-h">'
+    +   '<span class="ht-ic" aria-hidden="true">🏨</span>'
+    +   '<b class="ht-t">7구좌 숙박권</b>'
+    +   '<span class="ht-num" data-role="htNum">'+fmtNum(v.cur)+' / '+HOTEL_GOAL+'구좌</span>'
+    + '</div>'
+    + '<p class="ht-d">'+esc(desc)+'</p>'
+    + '<div class="ht-track" role="progressbar" aria-label="숙박권 진행" aria-valuemin="0" aria-valuemax="'+HOTEL_GOAL+'" aria-valuenow="'+v.cur+'">'
+    +   '<i data-role="htFill" style="width:'+v.pct+'%"></i>'
+    +   '<span class="ht-mark" style="left:'+markPct+'%" title="All Star 1구좌" aria-hidden="true"></span>'
+    + '</div>'
+    + '<div class="ht-foot"><span class="ht-sub" data-role="htSub">'+esc(v.sub)+'</span>'
+    +   '<span class="ht-stages">All Star 1 · 🏨 '+HOTEL_GOAL+'</span></div>'
+    + '</div>';
+}
+
 function statTabsHtml(who){
   return ['ima','kwon','soyeon'].map(function(id){
     var m = ownerById(id);
     var a = allStarOf(id);
+    var hv = id === HOTEL_OWNER ? hotelView() : null;
     var cnt = a.total ? (a.on ? starIcon() : a.done+'/'+a.total) : '';
+    /* 숙박권을 달성했으면 탭에는 🏨 만 — 좁은 화면에서 이름이 잘리지 않게 */
+    var badge = (hv && hv.done)
+      ? '<b class="who-cnt hotel" title="7구좌 숙박권 달성">🏨</b>'
+      : (cnt ? '<b class="who-cnt'+(a.on?' on':'')+'">'+cnt+'</b>' : '');
     return '<button class="who'+(who===id?' on':'')+'" data-act="filter" data-kind="stat" data-owner="'+id+'">'
       + '<span class="who-av" style="background:'+m.color+'">'+m.emoji+'</span>'
       + '<span class="who-nm">'+esc(m.short)+'</span>'
-      + (cnt ? '<b class="who-cnt'+(a.on?' on':'')+'">'+cnt+'</b>' : '')
+      + badge
       + '</button>';
   }).join('');
 }
@@ -1742,13 +1846,18 @@ function statTabsHtml(who){
 function statSummaryHtml(who){
   var me = ownerById(who);
   var mine = allStarOf(who);
+  var hv = who === HOTEL_OWNER ? hotelView() : null;
+  var badges = '';
+  if (mine.on) badges += '<span class="tk gold">'+starIcon()+'All Star</span>';
+  if (hv && hv.done) badges += '<span class="tk hotel">🏨 숙박권 달성</span>';
   return '<div class="st-who">'
     + '<span class="av" style="background:'+me.color+'">'+me.emoji+'</span>'
     + '<div class="w-nm"><b>'+esc(me.name)+'</b>'
     +   '<small>'+mine.done+' / '+mine.total+' 항목 달성</small></div>'
-    + (mine.on ? '<span class="tk gold">'+starIcon()+'All Star</span>' : '')
+    + (badges ? '<div class="st-badges">'+badges+'</div>' : '')
     + '</div>'
-    + allStarBanner(who);
+    + allStarBanner(who)
+    + hotelBanner(who);
 }
 
 function statFootHtml(who){
@@ -3079,6 +3188,7 @@ document.addEventListener('click', function(e){
       var stD = Number(t.getAttribute('data-d')) || 0;
       var wasAllStar = allStarOf(stOwner).on;
       var wasDone = statReached(stItem);
+      var hotelWas = hotelReached();
       /* 소수 실적도 부동소수점 오차 없이 한 칸씩 (0.5 +1 = 1.5, 0.5 −1 = 0)
          바뀐 변동분은 구좌·진단 연동 규칙대로 위 담당자 실적에도 함께 더해진다 */
       var stRes = setStatCur(stOwner, stId, statCur(stItem) + stD);
@@ -3086,7 +3196,9 @@ document.addEventListener('click', function(e){
       save(); renderAll();
       if (stD > 0) floatUp(e.clientX, e.clientY, '+'+fmtNum(stD));
       var stCelebrated = false;
-      if (stD > 0 && !wasAllStar && allStarOf(stOwner).on) {
+      if (hotelCelebrateIfNew(hotelWas)) {
+        stCelebrated = true;   /* 7구좌 숙박권을 처음 넘긴 순간 — All Star 축하와 겹치지 않게 */
+      } else if (stD > 0 && !wasAllStar && allStarOf(stOwner).on) {
         celebrate('🌟', ownerById(stOwner).short+' All Star 달성!', '모든 실적 항목이 목표 이상이에요');
         chime(); stCelebrated = true;
       } else if (stD > 0 && !wasDone && statIsRatio(stItem) && statReached(stItem)) {
@@ -3173,6 +3285,7 @@ document.addEventListener('click', function(e){
       var arr = state.stats[modalCtx.owner];
       var statWasEdit = !!modalCtx.id;
       var wasAllStar2 = allStarOf(modalCtx.owner).on;
+      var hotelWas2 = hotelReached();
       var statOwnerId = modalCtx.owner;
       var saveLink = null, saveDelta = 0;
       if (modalCtx.id) {
@@ -3195,7 +3308,7 @@ document.addEventListener('click', function(e){
       if (!statLinkNotice({ delta: saveDelta, link: saveLink })) {
         toast(statWasEdit ? '실적 항목을 고쳤어요' : '실적 항목을 추가했어요');
       }
-      if (!wasAllStar2 && allStarOf(statOwnerId).on) {
+      if (!hotelCelebrateIfNew(hotelWas2) && !wasAllStar2 && allStarOf(statOwnerId).on) {
         celebrate('🌟', ownerById(statOwnerId).short+' All Star 달성!', '모든 실적 항목이 목표 이상이에요');
         chime();
       }
