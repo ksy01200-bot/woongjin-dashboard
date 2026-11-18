@@ -432,8 +432,67 @@ main.pager.dragging .page,main.pager.dragging .page *{user-select:none;-webkit-u
 .hotel.htl-on .ht-track>i{background:linear-gradient(90deg,#7FD8AF,#3FA97A)}
 .hotel.htl-on .ht-sub{color:#27714F;font-size:12px}
 .hotel.htl-on .ht-stages{color:#2C7A55;background:#F3FCF7;box-shadow:inset 0 0 0 1px #BCE5CE}
+/* 권명주 숙박권 — 개인 구좌 + 하이어링 두 조건 */
+.kwh-conds{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.kwh-cond{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:4px;padding:3px 6px 3px 8px;
+  border-radius:11px;background:rgba(255,255,255,.66);box-shadow:inset 0 0 0 1px #DCEBE2}
+.kwh-cond.on{background:rgba(214,242,227,.86);box-shadow:inset 0 0 0 1px #9CD8B8}
+.kwh-cond-hire{flex:0 0 auto}
+.kwh-lb{font-size:11.5px;font-weight:800;color:#4E7C64;white-space:nowrap;letter-spacing:-.02em}
+.kwh-ctl{margin-left:auto;display:inline-flex;align-items:center;gap:1px}
+.kwh-st{width:23px;height:23px;padding:0;border:0;border-radius:8px;background:#EAF5EE;color:#2C7A55;
+  font:800 15px/1 inherit;display:grid;place-items:center;transition:transform .1s}
+.kwh-st:active{transform:scale(.9);background:#DCF0E5}
+.kwh-n{min-width:26px;height:23px;padding:0 2px;border:0;border-radius:7px;background:none;
+  font-family:inherit;font-size:12.5px;font-weight:800;color:#22714E;line-height:1}
+.kwh-n:active{background:#EAF5EE}
+.kwh-hit{font-size:11px;font-weight:800;color:#8CA396;white-space:nowrap}
+.kwh-cond.on .kwh-hit{color:#2C7A55}
+.kwh-val{margin-left:auto;font-size:11.5px;font-weight:800;color:#3E7C5E;white-space:nowrap}
+.kwh-cond.on .kwh-val{color:#1F7A4F}
+@media (max-width:360px){.kwh-lb{font-size:11px}.kwh-val{font-size:11px}.kwh-st{width:22px;height:22px}}
 @media (max-width:430px){.hotel{padding:9px 11px}.st-badges{gap:4px}}
 @media (max-width:360px){.hotel .ht-t{font-size:13px}.hotel .ht-num{font-size:11.5px}.hotel .ht-d{font-size:11px}.hotel .ht-stages{display:none}}
+
+/* ── 통합 카드: All Star + 🏨 숙박권 을 한 장으로 ──
+   위(All Star)와 아래(숙박권)를 같은 판에 얹고, 얇은 구분선으로만 나눈다.
+   판 색은 두 상태에 따라 달라진다: 미달성(크림) / All Star만(금) /
+   숙박권만(민트) / 둘 다(금→민트). */
+.starcard{position:relative;margin:0 0 6px;border-radius:18px;overflow:hidden;
+  background:linear-gradient(180deg,#FBF7EF 0%,#FAF4EA 100%);box-shadow:inset 0 0 0 1.5px #EFE2CE;
+  transition:background .32s ease,box-shadow .32s ease}
+.starcard .allstar,.starcard .allstar.on,
+.starcard .hotel,.starcard .hotel.htl-on{margin:0;border-radius:0;background:none;box-shadow:none}
+.starcard .allstar{padding:11px 12px 10px;row-gap:4px}
+.starcard .hotel{padding:9px 12px 11px;
+  background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.42) 58%,rgba(255,255,255,.60) 100%)}
+.starcard .sc-div{height:2px;margin:0 12px;border-radius:2px;
+  background:linear-gradient(90deg,rgba(120,100,70,0),rgba(120,100,70,.22) 12%,rgba(120,100,70,.22) 88%,rgba(120,100,70,0))}
+/* 판 색 — 상태별 */
+.starcard.sc-as{background:linear-gradient(135deg,#FFF7DA 0%,#FFE8A8 52%,#FFD98A 100%);
+  box-shadow:0 8px 20px rgba(232,178,54,.26),inset 0 0 0 1.5px #F0C24E}
+.starcard.sc-ht{background:linear-gradient(135deg,#EBF9F1 0%,#D5F1E3 55%,#C4EBD8 100%);
+  box-shadow:0 8px 20px rgba(79,169,122,.20),inset 0 0 0 1.5px #8FD0AE}
+.starcard.sc-as.sc-ht{background:linear-gradient(158deg,#FFF8DF 0%,#FFE9AE 36%,#E7F7EC 66%,#C9EEDA 100%);
+  box-shadow:0 9px 22px rgba(150,165,95,.22),inset 0 0 0 1.5px #D9D8A0}
+.starcard.sc-as .sc-div{background:linear-gradient(90deg,rgba(200,150,40,0),rgba(200,150,40,.42) 12%,rgba(200,150,40,.42) 88%,rgba(200,150,40,0))}
+.starcard.sc-ht .sc-div{background:linear-gradient(90deg,rgba(60,140,105,0),rgba(60,140,105,.34) 12%,rgba(60,140,105,.34) 88%,rgba(60,140,105,0))}
+.starcard.sc-as.sc-ht .sc-div{background:linear-gradient(90deg,rgba(200,150,40,0),rgba(200,150,40,.46) 22%,rgba(60,140,105,.40) 78%,rgba(60,140,105,0))}
+/* 금색 판 위의 숙박권 줄 — 회색 글씨가 묻히지 않게 */
+.starcard.sc-as .hotel.htl-off .ht-num{color:#2F7452}
+.starcard.sc-as .hotel.htl-off .ht-d{color:#8A6A2F}
+.starcard.sc-as .hotel.htl-off .ht-sub{color:#8C7440}
+.starcard.sc-as .hotel.htl-off .ht-stages{color:#8A6A2F;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(214,180,112,.65)}
+.starcard.sc-as .hotel.htl-off .ht-track{background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(225,196,138,.75)}
+/* 민트 판 위의 All Star 줄 */
+.starcard.sc-ht .allstar .as-b span{color:#6E8A7C}
+.starcard.sc-ht .allstar .as-due{background:rgba(255,255,255,.78)}
+.starcard.sc-ht .hotel.htl-on .ht-t{color:#1F6B49}
+.starcard.sc-ht .hotel.htl-on .ht-num{color:#1B6444}
+.starcard.sc-ht .hotel.htl-on .ht-sub{color:#1B6444}
+.starcard.sc-ht .hotel.htl-on .ht-track{box-shadow:inset 0 0 0 1.5px #7FC7A2}
+@media (max-width:430px){.starcard .allstar{padding:10px 11px 9px}.starcard .hotel{padding:8px 11px 10px}.starcard .sc-div{margin:0 11px}}
+@media (max-width:360px){.starcard{border-radius:16px}.starcard .allstar{padding:9px 10px 8px}.starcard .hotel{padding:8px 10px 9px}.starcard .sc-div{margin:0 10px}}
 
 /* 독서케어 — 총 케어 인원 대비 비율형 */
 .st-row.ratio .st-ic{background:#FFF1DC;box-shadow:inset 0 0 0 1.5px #F4DDB6}
@@ -977,6 +1036,13 @@ var ALLSTAR_DUE_DEFAULT = '2026-11-24';   /* 이번 달 All Star 달성 기한 (
 var HOTEL_GOAL = 7;
 var HOTEL_OWNER = 'soyeon';
 var HOTEL_STAT_ID = 'st_so_gujwa';
+/* 권명주 팀장님 숙박권 — 개인 3구좌 + 하이어링 1명 둘 다.
+   개인 구좌는 All Star 4항목(팀 구좌 15 등)과 별개라 따로 세는 수를 저장한다
+   (state.kwonOwnGujwa · 실적 항목 stats.kwon 은 건드리지 않는다). */
+var KWON_OWNER = 'kwon';
+var KWON_HOTEL_GOAL = 3;      /* 개인 3구좌 */
+var KWON_HIRE_GOAL = 1;       /* 하이어링 1명 */
+var KWON_HIRE_STAT_ID = 'st_kwon_hire';
 var STATS_SEED = {
   ima: [
     { id:'st_ima_gujwa',  label:'월 구좌',  emoji:'📚', goal:35, cur:0, unit:'구좌' },
@@ -1005,6 +1071,7 @@ function defaultState(){
     seedVersion: SEED_VERSION,
     statsSetup: STATS_SETUP_VERSION,
     allStarDue: ALLSTAR_DUE_DEFAULT,
+    kwonOwnGujwa: 0,          /* 권명주 숙박권 — 개인 구좌(All Star 항목과 별개) */
     createdAt: new Date().toISOString(),
     stats: seedStats(),
     schedules: JSON.parse(JSON.stringify(SEED_SCHEDULES)),
@@ -1154,6 +1221,8 @@ function normalize(src){
   out.statsSetup = STATS_SETUP_VERSION;
   delete out.targets;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(out.allStarDue || ''))) out.allStarDue = ALLSTAR_DUE_DEFAULT;
+  /* 권명주 숙박권 개인 구좌 — 저장값이 깨졌으면 0부터 (기본값과 호환) */
+  out.kwonOwnGujwa = roundQty(src.kwonOwnGujwa === undefined ? 0 : src.kwonOwnGujwa);
   /* 세팅 버전이 올라올 때 한 번만: 독서케어를 총 인원 기준 비율형으로 */
   if (setupVer < STATS_SETUP_VERSION) migrateRatioItems(out.stats);
 
@@ -1415,6 +1484,52 @@ function hotelView(){
   return { cur:cur, goal:goal, pct:pct, done:done, left:left, over:over, sub:sub };
 }
 function hotelReached(){ var v = hotelView(); return !!(v && v.done); }
+
+/* ---------- 5a-2. 권명주 숙박권 — 개인 3구좌 + 하이어링 1명 ----------
+   하이어링은 기존 All Star 항목(st_kwon_hire)을 그대로 보고,
+   개인 구좌만 따로 세는 수(state.kwonOwnGujwa)로 확인한다. */
+function kwonOwnGujwa(){ return roundQty(state && state.kwonOwnGujwa); }
+function kwonHireItem(){
+  var items = statsOf(KWON_OWNER), i;
+  for (i=0;i<items.length;i++){ if (items[i].id === KWON_HIRE_STAT_ID) return items[i]; }
+  for (i=0;i<items.length;i++){
+    if (String(items[i].label || '').replace(/\s+/g, '') === '하이어링') return items[i];
+  }
+  return null;
+}
+function kwonHotelView(){
+  var own = kwonOwnGujwa();
+  var hireItem = kwonHireItem();
+  var hire = hireItem ? statCur(hireItem) : 0;
+  var gDone = own >= KWON_HOTEL_GOAL;
+  var hDone = hire >= KWON_HIRE_GOAL;
+  var done = gDone && hDone;
+  var pg = Math.min(1, own / KWON_HOTEL_GOAL);
+  var ph = Math.min(1, hire / KWON_HIRE_GOAL);
+  var pct = Math.round((pg + ph) / 2 * 1000) / 10;
+  var need = [];
+  if (!gDone) need.push(fmtNum(roundQty(KWON_HOTEL_GOAL - own)) + '구좌');
+  if (!hDone) need.push('하이어링 ' + fmtNum(roundQty(KWON_HIRE_GOAL - hire)) + '명');
+  var sub;
+  if (done) {
+    var over = [];
+    if (own > KWON_HOTEL_GOAL) over.push('개인 +' + fmtNum(roundQty(own - KWON_HOTEL_GOAL)) + '구좌');
+    if (hire > KWON_HIRE_GOAL) over.push('하이어링 +' + fmtNum(roundQty(hire - KWON_HIRE_GOAL)) + '명');
+    sub = '🏨 숙박권 달성!' + (over.length ? ' · 목표보다 ' + over.join(' · ') + ' 더 셈' : '');
+  } else {
+    sub = need.join(' · ') + ' 남음';
+  }
+  return { cur:own, goal:KWON_HOTEL_GOAL, hire:hire, hireGoal:KWON_HIRE_GOAL,
+           gDone:gDone, hDone:hDone, done:done, pct:pct, sub:sub };
+}
+function kwonHotelReached(){ var v = kwonHotelView(); return !!(v && v.done); }
+function kwonHotelCelebrateIfNew(wasReached){
+  if (wasReached) return false;
+  if (!kwonHotelReached()) return false;
+  celebrate('🏨', '숙박권 달성!', '권명주 개인 ' + KWON_HOTEL_GOAL + '구좌 · 하이어링 ' + KWON_HIRE_GOAL + '명을 모두 채웠어요');
+  chime();
+  return true;
+}
 /* 7구좌를 처음 넘긴 순간에만 축하 (이미 넘어 있던 상태에서 숫자만 고치면 울리지 않는다) */
 function hotelCelebrateIfNew(wasReached){
   if (wasReached) return false;
@@ -1802,6 +1917,7 @@ function allStarBanner(ownerId){
 }
 
 function hotelBanner(ownerId){
+  if (ownerId === KWON_OWNER) return kwonHotelBanner();
   if (ownerId !== HOTEL_OWNER) return '';
   var v = hotelView();
   if (!v) return '';
@@ -1825,15 +1941,50 @@ function hotelBanner(ownerId){
     + '</div>';
 }
 
+function kwonHotelBanner(){
+  var v = kwonHotelView();
+  var desc = v.done
+    ? '개인 ' + KWON_HOTEL_GOAL + '구좌 · 하이어링 ' + KWON_HIRE_GOAL + '명 모두 채웠어요'
+    : 'All Star 다음 단계 · 개인 ' + KWON_HOTEL_GOAL + '구좌 + 하이어링 ' + KWON_HIRE_GOAL + '명을 채우면 달성';
+  return '<div class="hotel htl-'+(v.done?'on':'off')+' kwh" id="hotelStage">'
+    + '<div class="ht-h">'
+    +   '<span class="ht-ic" aria-hidden="true">🏨</span>'
+    +   '<b class="ht-t">숙박권</b>'
+    +   '<span class="ht-num" data-role="htNum">'+fmtNum(v.cur)+' / '+KWON_HOTEL_GOAL+'구좌</span>'
+    + '</div>'
+    + '<p class="ht-d">'+esc(desc)+'</p>'
+    + '<div class="kwh-conds">'
+    +   '<div class="kwh-cond'+(v.gDone?' on':'')+'" data-role="kwhOwn">'
+    +     '<span class="kwh-lb">👤 개인 구좌</span>'
+    +     '<span class="kwh-ctl">'
+    +       '<button class="kwh-st" data-act="kwonGujwaStep" data-d="-1" aria-label="개인 구좌 1 빼기">−</button>'
+    +       '<button class="kwh-n" data-act="kwonGujwaEdit" aria-label="개인 구좌 직접 고치기 (지금 '+fmtNum(v.cur)+'구좌)">'+fmtNum(v.cur)+'</button>'
+    +       '<button class="kwh-st" data-act="kwonGujwaStep" data-d="1" aria-label="개인 구좌 1 더하기">＋</button>'
+    +     '</span>'
+    +     '<span class="kwh-hit" data-role="kwhOwnHit">/ '+KWON_HOTEL_GOAL+'</span>'
+    +   '</div>'
+    +   '<div class="kwh-cond kwh-cond-hire'+(v.hDone?' on':'')+'" data-role="kwhHire">'
+    +     '<span class="kwh-lb">🤝 하이어링</span>'
+    +     '<b class="kwh-val" data-role="kwhHireVal"'+(v.hDone?' ✓':'')+'>'+fmtNum(v.hire)+' / '+KWON_HIRE_GOAL+'명'+(v.hDone?' ✓':'')+'</b>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="ht-track" role="progressbar" aria-label="숙박권 진행" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+v.pct+'">'
+    +   '<i data-role="htFill" style="width:'+v.pct+'%"></i>'
+    + '</div>'
+    + '<div class="ht-foot"><span class="ht-sub" data-role="htSub">'+esc(v.sub)+'</span>'
+    +   '<span class="ht-stages">👤 '+KWON_HOTEL_GOAL+' + 🤝 '+KWON_HIRE_GOAL+'</span></div>'
+    + '</div>';
+}
+
 function statTabsHtml(who){
   return ['ima','kwon','soyeon'].map(function(id){
     var m = ownerById(id);
     var a = allStarOf(id);
-    var hv = id === HOTEL_OWNER ? hotelView() : null;
+    var hv = id === HOTEL_OWNER ? hotelView() : (id === KWON_OWNER ? kwonHotelView() : null);
     var cnt = a.total ? (a.on ? starIcon() : a.done+'/'+a.total) : '';
     /* 숙박권을 달성했으면 탭에는 🏨 만 — 좁은 화면에서 이름이 잘리지 않게 */
     var badge = (hv && hv.done)
-      ? '<b class="who-cnt hotel" title="7구좌 숙박권 달성">🏨</b>'
+      ? '<b class="who-cnt hotel" title="숙박권 달성">🏨</b>'
       : (cnt ? '<b class="who-cnt'+(a.on?' on':'')+'">'+cnt+'</b>' : '');
     return '<button class="who'+(who===id?' on':'')+'" data-act="filter" data-kind="stat" data-owner="'+id+'">'
       + '<span class="who-av" style="background:'+m.color+'">'+m.emoji+'</span>'
@@ -1846,18 +1997,33 @@ function statTabsHtml(who){
 function statSummaryHtml(who){
   var me = ownerById(who);
   var mine = allStarOf(who);
-  var hv = who === HOTEL_OWNER ? hotelView() : null;
+  var hv = who === HOTEL_OWNER ? hotelView() : (who === KWON_OWNER ? kwonHotelView() : null);
   var badges = '';
   if (mine.on) badges += '<span class="tk gold">'+starIcon()+'All Star</span>';
   if (hv && hv.done) badges += '<span class="tk hotel">🏨 숙박권 달성</span>';
+  /* All Star 조건바와 숙박권 진행 바는 한 장의 카드로 묶는다.
+     판 색은 네 가지 조합(미달성 / All Star만 / 숙박권만 / 둘 다)에 맞춰 달라진다. */
+  var asHtml = allStarBanner(who);
+  var htHtml = hotelBanner(who);
+  var stage;
+  if (asHtml && htHtml) {
+    var scCls = 'starcard' + (mine.on ? ' sc-as' : '') + (hv.done ? ' sc-ht' : '');
+    var scState = (mine.on && hv.done) ? 'both' : (mine.on ? 'as' : (hv.done ? 'hotel' : 'none'));
+    stage = '<div class="'+scCls+'" id="starCard" data-state="'+scState+'">'
+      + asHtml
+      + '<div class="sc-div" role="separator" aria-hidden="true"></div>'
+      + htHtml
+      + '</div>';
+  } else {
+    stage = asHtml + htHtml;
+  }
   return '<div class="st-who">'
     + '<span class="av" style="background:'+me.color+'">'+me.emoji+'</span>'
     + '<div class="w-nm"><b>'+esc(me.name)+'</b>'
     +   '<small>'+mine.done+' / '+mine.total+' 항목 달성</small></div>'
     + (badges ? '<div class="st-badges">'+badges+'</div>' : '')
     + '</div>'
-    + allStarBanner(who)
-    + hotelBanner(who);
+    + stage;
 }
 
 function statFootHtml(who){
@@ -2607,6 +2773,18 @@ function openAllStarDueForm(){
   );
 }
 
+function openKwonGujwaForm(){
+  var g = kwonOwnGujwa();
+  modalCtx = { type:'kwgujwa' };
+  openModal(
+      '<h3>👤 권명주 팀장님 개인 구좌</h3>'
+    + '<p class="hint-mini">숙박권은 <b>개인 '+KWON_HOTEL_GOAL+'구좌 + 하이어링 '+KWON_HIRE_GOAL+'명</b>을 모두 채워야 달성입니다. 팀 구좌(All Star 항목)와는 따로 세는 수이니 이 칸에만 넣어 주세요. 소수 둘째 자리까지 넣을 수 있습니다.</p>'
+    + '<label class="fld"><span>지금 개인 구좌</span><input id="kwGujwa" type="number" inputmode="decimal" min="0" max="999" step="any" value="'+fmtNum(g)+'"></label>'
+    + '<div class="modal-actions"><button class="btn ghost" data-act="closeModal">취소</button>'
+    +   '<button class="btn" data-act="kwonGujwaSave">저장</button></div>'
+  );
+}
+
 function openStatForm(ownerId, item){
   var edit = !!item;
   var o = ownerById(ownerId);
@@ -3179,6 +3357,31 @@ document.addEventListener('click', function(e){
       break;
     }
 
+    case 'kwonGujwaStep': {
+      var kwWas = kwonHotelReached();
+      var kwD = Number(t.getAttribute('data-d')) || 0;
+      state.kwonOwnGujwa = roundQty(kwonOwnGujwa() + kwD);
+      save(); renderAll();
+      if (kwD > 0) floatUp(e.clientX, e.clientY, '+' + fmtNum(kwD));
+      kwonHotelCelebrateIfNew(kwWas);
+      break;
+    }
+
+    case 'kwonGujwaEdit':
+      openKwonGujwaForm();
+      break;
+
+    case 'kwonGujwaSave': {
+      if (!modalCtx || modalCtx.type !== 'kwgujwa') return;
+      var kwVal = parseQty(el('kwGujwa').value);
+      if (isNaN(kwVal)) { toast('개인 구좌 숫자를 적어 주세요'); return; }
+      var kwBefore = kwonHotelReached();
+      state.kwonOwnGujwa = kwVal;
+      save(); closeModal(); renderAll();
+      if (!kwonHotelCelebrateIfNew(kwBefore)) toast('개인 구좌를 ' + fmtNum(kwVal) + '구좌로 바꿨어요');
+      break;
+    }
+
     case 'statDelta': {
       var stOwner = t.getAttribute('data-owner');
       var stId = t.getAttribute('data-id');
@@ -3189,6 +3392,7 @@ document.addEventListener('click', function(e){
       var wasAllStar = allStarOf(stOwner).on;
       var wasDone = statReached(stItem);
       var hotelWas = hotelReached();
+      var kwHotelWas = kwonHotelReached();
       /* 소수 실적도 부동소수점 오차 없이 한 칸씩 (0.5 +1 = 1.5, 0.5 −1 = 0)
          바뀐 변동분은 구좌·진단 연동 규칙대로 위 담당자 실적에도 함께 더해진다 */
       var stRes = setStatCur(stOwner, stId, statCur(stItem) + stD);
@@ -3196,7 +3400,9 @@ document.addEventListener('click', function(e){
       save(); renderAll();
       if (stD > 0) floatUp(e.clientX, e.clientY, '+'+fmtNum(stD));
       var stCelebrated = false;
-      if (hotelCelebrateIfNew(hotelWas)) {
+      if (stOwner === KWON_OWNER && kwonHotelCelebrateIfNew(kwHotelWas)) {
+        stCelebrated = true;   /* 권명주 숙박권(개인 3구좌+하이어링 1명)을 처음 채운 순간 */
+      } else if (hotelCelebrateIfNew(hotelWas)) {
         stCelebrated = true;   /* 7구좌 숙박권을 처음 넘긴 순간 — All Star 축하와 겹치지 않게 */
       } else if (stD > 0 && !wasAllStar && allStarOf(stOwner).on) {
         celebrate('🌟', ownerById(stOwner).short+' All Star 달성!', '모든 실적 항목이 목표 이상이에요');
