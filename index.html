@@ -825,7 +825,7 @@ html.locked .lock-screen{
 /* ---------- 1. 상수 ---------- */
 var STORAGE_KEY = 'woongjin12Dashboard.v1';
 var WEATHER_KEY = 'woongjin12Dashboard.weather.v1';
-var SEED_VERSION = 3;
+var SEED_VERSION = 4;
 var REGION_NAME = '대구중부 12지역국';
 var MY_DEADLINE = '2026-11-24';
 var MY_ID = 'soyeon';
@@ -905,6 +905,8 @@ var SEED_SCHEDULES = [
   /* 매주 반복 (11월 매주 월·목 미래Q) */
   { id:'sc_mirae_mon', short:'미래Q', kind:'weekly', day:1, start:'10:00', title:'미래Q', owner:'common', note:'지역국 공통 · 매주 월요일' },
   { id:'sc_mirae_thu', short:'미래Q', kind:'weekly', day:4, start:'10:00', title:'미래Q', owner:'common', note:'지역국 공통 · 매주 목요일' },
+  /* 매주 반복 (매주 금요일 15:00 김수호 KRS — 김소연 담당) */
+  { id:'sc_krs_fri', short:'김수호', kind:'weekly', day:5, start:'15:00', title:'김수호 KRS', owner:'soyeon', note:'매주 금요일 15:00 고정 · 김소연 담당' },
 
   /* 11월 지역국 일정 */
   { id:'sc_1103', short:'사업계획', kind:'date', date:'2026-11-03', title:'지역국 사업계획서 제출일', owner:'common' },
@@ -1160,6 +1162,24 @@ function migrateRatioItems(stats){
     });
   });
 }
+/* 시드 v4: 매주 금요일 15:00 김수호 KRS 반복 일정 추가 (소연 님 요청).
+   저장된 기기에서도 한 번만 끼워 넣고, 사용자가 넣은 실적·체크·직접 만든 일정은 그대로 둔다.
+   이미 같은 반복 일정(제목에 김수호 · 금요일)이 있으면 중복으로 넣지 않는다. */
+var KRS_FRI_ID = 'sc_krs_fri';
+var KRS_FRI_SEED = { id:KRS_FRI_ID, short:'김수호', kind:'weekly', day:5, start:'15:00',
+  title:'김수호 KRS', owner:'soyeon', note:'매주 금요일 15:00 고정 · 김소연 담당' };
+function ensureKrsFriday(list){
+  if (!Array.isArray(list)) return;
+  var has = list.some(function(s){
+    if (!s) return false;
+    if (s.id === KRS_FRI_ID) return true;
+    return s.kind === 'weekly' && Number(s.day) === 5 && /김수호/.test(String(s.title || ''));
+  });
+  if (has) return;
+  var add = JSON.parse(JSON.stringify(KRS_FRI_SEED));
+  /* 시간 순서가 자연스럽게 유지되도록 날짜 없는 반복 일정 뒤에 붙인다 */
+  list.push(add);
+}
 /* 시드 v3: 강다혜 방문 11/18(수) 16:30 → 11/20(금) 16:30 (소연 님 요청).
    사용자가 넣은 실적·완료 체크는 그대로 두고 날짜만 옮긴다.
    이미 11/20 이거나 사용자가 다른 날짜로 옮겨 둔 항목은 건드리지 않는다. */
@@ -1282,6 +1302,8 @@ function normalize(src){
     moveKangDate(out.schedules);
     moveKangDate(out.visits);
   }
+  /* 시드 v4: 저장된 기기에도 매주 금요일 15:00 김수호 KRS 반복 일정을 더한다 */
+  if (srcSeed < 4) ensureKrsFriday(out.schedules);
   out.seedVersion = SEED_VERSION;
   return out;
 }
