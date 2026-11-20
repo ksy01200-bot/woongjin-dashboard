@@ -825,7 +825,7 @@ html.locked .lock-screen{
 /* ---------- 1. 상수 ---------- */
 var STORAGE_KEY = 'woongjin12Dashboard.v1';
 var WEATHER_KEY = 'woongjin12Dashboard.weather.v1';
-var SEED_VERSION = 4;
+var SEED_VERSION = 5;
 var REGION_NAME = '대구중부 12지역국';
 var MY_DEADLINE = '2026-11-24';
 var MY_ID = 'soyeon';
@@ -951,6 +951,7 @@ var SEED_SCHEDULES = [
   { id:'sc_1124_reg', short:'업무등록', kind:'date', date:'2026-11-24', title:'업무등록 마감', owner:'soyeon', note:'출근·진단검사·QR소스 실적 등록' },
   { id:'sc_1124_edu1', short:'EDU1', kind:'date', date:'2026-11-24', endDate:'2026-11-26', title:'SMART EDU1과정', owner:'common' },
   { id:'sc_1125_oltab', short:'올탭과외', kind:'date', date:'2026-11-25', title:'올탭과외 마감', owner:'common' },
+  { id:'sc_1125_hosp', short:'현세병원', kind:'date', date:'2026-11-25', start:'09:30', title:'현세 아이키움병원', owner:'soyeon', note:'아이키움병원 동행' },
   { id:'sc_1125_sanmo', short:'산모교실', kind:'date', date:'2026-11-25', start:'13:00', end:'16:00', title:'산모교실', owner:'soyeon', note:'올포유' },
   { id:'sc_1126_sanmo', short:'산모교실', kind:'date', date:'2026-11-26', start:'13:00', end:'16:00', title:'산모교실', owner:'soyeon', note:'아이아망' },
   { id:'sc_1127_month', short:'월마감', kind:'date', date:'2026-11-27', title:'월마감', owner:'common' },
@@ -1180,6 +1181,24 @@ function ensureKrsFriday(list){
   /* 시간 순서가 자연스럽게 유지되도록 날짜 없는 반복 일정 뒤에 붙인다 */
   list.push(add);
 }
+/* 시드 v5: 11/25(수) 09:30 현세 아이키움병원 일정 추가 (소연 님 요청).
+   저장된 기기에서도 한 번만 끼워 넣고, 실적·체크·직접 만든 일정은 그대로 둔다.
+   이미 같은 일정(11/25 · 제목에 아이키움 또는 현세병원)이 있으면 중복으로 넣지 않는다. */
+var HOSP_1125_ID = 'sc_1125_hosp';
+var HOSP_1125_SEED = { id:HOSP_1125_ID, short:'현세병원', kind:'date', date:'2026-11-25', start:'09:30',
+  title:'현세 아이키움병원', owner:'soyeon', note:'아이키움병원 동행' };
+function ensureHyeonseHospital(list){
+  if (!Array.isArray(list)) return;
+  var has = list.some(function(s){
+    if (!s) return false;
+    if (s.id === HOSP_1125_ID) return true;
+    if (s.kind === 'weekly') return false;
+    if (s.date !== '2026-11-25') return false;
+    return /아이키움/.test(String(s.title || '')) || String(s.short || '') === '현세병원';
+  });
+  if (has) return;
+  list.push(JSON.parse(JSON.stringify(HOSP_1125_SEED)));
+}
 /* 시드 v3: 강다혜 방문 11/18(수) 16:30 → 11/20(금) 16:30 (소연 님 요청).
    사용자가 넣은 실적·완료 체크는 그대로 두고 날짜만 옮긴다.
    이미 11/20 이거나 사용자가 다른 날짜로 옮겨 둔 항목은 건드리지 않는다. */
@@ -1304,6 +1323,8 @@ function normalize(src){
   }
   /* 시드 v4: 저장된 기기에도 매주 금요일 15:00 김수호 KRS 반복 일정을 더한다 */
   if (srcSeed < 4) ensureKrsFriday(out.schedules);
+  /* 시드 v5: 저장된 기기에도 11/25(수) 09:30 현세 아이키움병원 일정을 더한다 */
+  if (srcSeed < 5) ensureHyeonseHospital(out.schedules);
   out.seedVersion = SEED_VERSION;
   return out;
 }
